@@ -6,6 +6,8 @@ from bparser import BParser
 
 from VariableDefinition import VarDef
 from ClassDefinition import ClassDef
+from StatementDefinition import StateDef
+from MethodDefinition import MethodDef
 
 class Interpreter(InterpreterBase): 
     def __init__(self, console_output=True, inp=None, trace_output=True):
@@ -19,6 +21,7 @@ class Interpreter(InterpreterBase):
             print('Parsing failed. There must have been a mismatched parenthesis.')
             return
         classes = []
+        mainClass = None
         for i in range(len(parsed_program)): #parsed_program[i] = a new defined class
             if (parsed_program[i][0] != "class"):
                 continue
@@ -26,17 +29,22 @@ class Interpreter(InterpreterBase):
             methods = []
             for j in range(len(parsed_program[i])): # number of fields and methods in that class
                 if (parsed_program[i][j][0] == "field"):
-                    #print(f'field of name "{parsed_program[i][j][1]}" with init val = {parsed_program[i][j][2]}')
                     fields.append(VarDef(parsed_program[i][j][1],parsed_program[i][j][2]))
-                    f = fields[len(fields)-1]
-                    #print(f'\tfield "{f.name}" = {f.value}')
-                #if (parsed_program[i][j][0] == "method"):
-                    #print(f'method of name "{parsed_program[i][j][1]}"')
-            classes.append(ClassDef(parsed_program[i][1], fields, methods))
-            classes[0].printAll()
-            #(self, name, fields, methods):
-            print("ddd\n")
+                if (parsed_program[i][j][0] == "method"):
+                    methods.append(MethodDef(parsed_program[i][j]))
+            
+            c = ClassDef(parsed_program[i][1], fields, methods)
+            classes.append(c)
 
+            if (c.name == "main"):
+                mainClass = c
+            classes[0].printAll()
+            print("---------------------------\n")
+        
+        if (mainClass != None): #runs main method's main.
+            m = mainClass.lookUpMethod("main")
+            if (m != None):
+                m.run()
 
 program = [
     '(class main',
