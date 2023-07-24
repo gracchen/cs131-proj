@@ -25,33 +25,28 @@ class Interpreter(InterpreterBase):
         for i in range(len(parsed_program)): #parsed_program[i] = a new defined class
             if (parsed_program[i][0] != "class"):
                 continue
-            fields = []
-            methods = []
-            for j in range(len(parsed_program[i])): # number of fields and methods in that class
-                if (parsed_program[i][j][0] == "field"):
-                    fields.append(VarDef(parsed_program[i][j][1],parsed_program[i][j][2]))
-                if (parsed_program[i][j][0] == "method"):
-                    methods.append(MethodDef(parsed_program[i][j]))
-            
-            c = ClassDef(parsed_program[i][1], fields, methods)
+
+            c = ClassDef(parsed_program[i])
             classes.append(c)
 
             if (c.name == "main"):
                 mainClass = c
-            classes[0].printAll()
+            #classes[0].printAll()
             print("---------------------------\n")
         
         if (mainClass != None): #runs main method's main.
-            m = mainClass.lookUpMethod("main")
-            if (m != None):
-                m.run()
+            #main = mainClass.lookUpMethod("main")
+            #if (main != None):
+            m = mainClass.instantiate_object()
+            #m.printAll()
+            m.call_method("main")
 
 program = [
     '(class main',
     ' (field num1 0)',
     ' (field num2 1)',
     ' (method main ()',
-    '   (print "hello world!")',
+    '   (print "hello world! " num1 " and " num2)',
     ' ) # end of method',
     ') # end of class']
 

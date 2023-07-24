@@ -1,9 +1,9 @@
 
 class StateDef():
-    def __init__(self, program):
+    def __init__(self, c, program):
+        self.c = c
         self.program = program
 
-    def run(self):
-        if (self.program[0] == "print"):
-            for i in range(1, len(self.program)):
-                print(self.program[i])
+    def is_print(self):
+        return self.program[0] == "print"
+
