@@ -7,3 +7,6 @@ class StateDef():
     def is_print(self):
         return self.program[0] == "print"
 
+    def is_return(self):
+        return self.program[0] == "return"
+
