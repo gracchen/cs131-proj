@@ -26,15 +26,13 @@ class ObjDef():
         for m in self.methods:
             if (m.name == name):
                 return m
-        return None  #interpreter = InterpreterBase()
-        #interpreter.error(ErrorType.NAME_ERROR, f"Name '{name}' is not defined.", line_num=2)
+        return None
     
     def lookUpField(self,name):
         for f in self.fields:
             if (f.name == name):
                 return f
-        return None  #interpreter = InterpreterBase()
-        #interpreter.error(ErrorType.NAME_ERROR, f"Name '{name}' is not defined.", line_num=2)
+        return None
     
     # Interpret the specified method using the provided parameters    
     def call_method(self, method_name, params=[]): 
@@ -79,27 +77,55 @@ class ObjDef():
             if (res == None): 
                 res = "None"
             return res
-        elif expr[0] == '+' or expr[0] == '-' or expr[0] == '*' or expr[0] == '/' or expr[0] == '%':
+        elif expr[0] == '+' or expr[0] == '-' or expr[0] == '*' or expr[0] == '/' or expr[0] == '%' or expr[0] == '<' or expr[0] == '>' or expr[0] == '<=' or expr[0] == '>=' or expr[0] == '==' or expr[0] == '!=' or expr[0] == '!' or expr[0] == '&' or expr[0] == '|':
             op = expr[0]
             expr = expr[1:3]
 
         for i in range(len(expr)):
             expr[i] = self.evalName(expr[i], param_names, params)
 
-        if op != '' and not ((isinstance(expr[0], int) and isinstance(expr[1], int)) or (isinstance(expr[0], str) and isinstance(expr[1], str))):
+        if op == '':
+            return expr
+        
+        if op == '!' and isinstance(expr[0],bool):
+            return not expr[0]
+        
+        if not ((isinstance(expr[0], bool) and isinstance(expr[1], bool)) or (isinstance(expr[0], int) and isinstance(expr[1], int)) or (isinstance(expr[0], str) and isinstance(expr[1], str))):
             InterpreterBase().error(ErrorType.TYPE_ERROR, f"'{expr[0]}' and {expr[1]} not of same type to perform operation.")
+        
+        if op == '==':
+            return expr[0] == expr[1]
+        if op == '!=':
+            return expr[0] != expr[1]
+            
+        if (isinstance(expr[0], int)) or (isinstance(expr[0], str)):
+            if op == '+':
+                return expr[0] + expr[1]
+            if op == '>':
+                return expr[0] > expr[1]
+            if op == '<':
+                return expr[0] < expr[1]
+            if op == '<=':
+                return expr[0] <= expr[1]
+            if op == '>=':
+                return expr[0] >= expr[1]
 
-        if op == '+':
-            return expr[0] + expr[1]
-        if op == '-':
-            return expr[0] - expr[1]
-        if op == '*':
-            return expr[0] * expr[1]
-        if op == '/':
-            return expr[0] // expr[1]
-        if op == '%':
-            return expr[0] % expr[1]
-        return expr
+        if(isinstance(expr[0], bool)):
+            if (op == '&'):
+                return expr[0] and expr[1]
+            if (op == '|'):
+                return expr[0] or expr[1]
+        
+        if (isinstance(expr[0], int)):
+            if op == '-':
+                return expr[0] - expr[1]
+            if op == '*':
+                return expr[0] * expr[1]
+            if op == '/':
+                return expr[0] // expr[1]
+            if op == '%':
+                return expr[0] % expr[1]
+            InterpreterBase().error(ErrorType.TYPE_ERROR, f"'{expr[0]}' and {expr[1]} cannot use operation {op}.")
     
     def isString(self, input):
         return input[0] == '"' and input[-1] == '"'
@@ -110,6 +136,10 @@ class ObjDef():
     def evalName(self, name, param_names=[], params=[]):
         if type(name) is list: #sub expr
             name = self.evaluate_expr(name, param_names, params) #recursively process it
+        elif name == 'true':
+            name = True
+        elif name == 'false':
+            name = False
         elif self.isString(name[0]): # a string
             name = name[1:-1] # remove quotes
         elif self.lookUpField(name) != None: # a field

@@ -1,5 +1,3 @@
-
-
 from intbase import InterpreterBase
 from bparser import BParser
 
@@ -44,14 +42,16 @@ program = [
     '(class main',
     ' (field num1 1)',
     ' (field num2 2)',
+    ' (field tr true)',
+    ' (field fa false)',
     ' (method main ()',
-    '   (print "hello world! " (call me retnum1) " " num2 " " -2 " " (call me retinput 666 num2))',
+    '   (print "hello world! " (call me retnum1) " " num2 " " -2 " " (call me retinput 2 num2))',
     ' )' ,
     ' (method retnum1 ()',
-    '   (return num1)',
+    '   (return (! tr))',
     ' )' ,
     ' (method retinput (n m)',
-    '   (return (+ m n))',
+    '   (return (& (< m n) tr))',
     ' )' ,
     ') # end of class']
 '''
