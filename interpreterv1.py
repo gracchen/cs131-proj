@@ -1,5 +1,4 @@
-import os
-os.system("cls")
+
 
 from intbase import InterpreterBase
 from bparser import BParser
@@ -46,13 +45,13 @@ program = [
     ' (field num1 1)',
     ' (field num2 2)',
     ' (method main ()',
-    '   (print "hello world! " (call me retnum1) num2 (call me retnone))',
+    '   (print "hello world! " (call me retnum1) " " num2 " " -2 " " (call me retinput 666 num2))',
     ' )' ,
     ' (method retnum1 ()',
     '   (return num1)',
     ' )' ,
-    ' (method retnone ()',
-    '   (return)',
+    ' (method retinput (n m)',
+    '   (return (+ m n))',
     ' )' ,
     ') # end of class']
 '''
@@ -65,5 +64,8 @@ program = [
     ' ) # end of method',
     ') # end of class']
 '''
+
+import os
+os.system("cls")
 interpreter = Interpreter()
 interpreter.run(program)

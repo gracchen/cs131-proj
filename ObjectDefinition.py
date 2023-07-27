@@ -19,6 +19,7 @@ class ObjDef():
         self.methods.append(method)
 
     def add_field(self, field):
+        field.value = self.evalName(field.value)
         self.fields.append(field)
     
     def lookUpMethod(self,name):
@@ -36,53 +37,88 @@ class ObjDef():
         #interpreter.error(ErrorType.NAME_ERROR, f"Name '{name}' is not defined.", line_num=2)
     
     # Interpret the specified method using the provided parameters    
-    def call_method(self, method_name):
+    def call_method(self, method_name, params=[]): 
         method = self.lookUpMethod(method_name)
         if (method == None):
             InterpreterBase().error(ErrorType.NAME_ERROR, f"Method '{method_name}' is not defined.")
         statement = method.body
-        result = self.__run_statement(statement)
+        if (len(params) != len(method.params)): #if call w/ args 1,2  then n=1 and m=2, so [1,2] for m.params=["n", "m"]
+            InterpreterBase().error(ErrorType.NAME_ERROR, f"Method '{method_name}' given wrong number of parameters.")
+        result = self.__run_statement(statement, method.params, params)
         return result
 
     # runs/interprets the passed-in statement until completion and 
     # gets the result, if any
-    def __run_statement(self, statement):
+    def __run_statement(self, statement, param_names, params):
         if statement.is_print():
-            result = self.__execute_print(statement.program)
+            result = self.__execute_print(statement.program, param_names, params)
         elif statement.is_return():
-            result = self.__execute_return(statement.program)
+            result = self.__execute_return(statement.program, param_names, params)
         return result
 
-    def __execute_print(self, statement):
-        output = "".join(self.evaluate_expr(statement[1:]))
+    def __execute_print(self, statement, param_names, params):
+        converted_list = [str(elem) for elem in self.evaluate_expr(statement[1:], param_names, params)]
+        output = "".join(converted_list)
 
         ib = InterpreterBase()
         ib.output(output)
         return None
 
-    def __execute_return(self, statement):
+    def __execute_return(self, statement, param_names, params):
         if (len(statement) <= 1): # just "(return)"
             return None
-        output = "".join(self.evaluate_expr(statement[1:]))
+        converted_list = [str(elem) for elem in self.evaluate_expr(statement[1:], param_names, params)]
+        output = "".join(converted_list)
         return output
 
-    def evaluate_expr(self, expr):
+    def evaluate_expr(self, expr, param_names=[], params=[]): #param_names=["n", "x"], params=[9,-1]
+        print("evaluating",expr,"with param names",param_names,"and their corresponding values",params)
+        op = ''
         if expr[0] == 'call':
-            res = self.call_method(expr[2]) # temporarily ONLY "me" param-less methods
+            res = self.call_method(expr[2], expr[3:]) # temporarily ONLY "me" param-less methods
             if (res == None): 
                 res = "None"
             return res
-        
-        for i in range(len(expr)):
-            if type(expr[i]) is list:
-                expr[i] = self.evaluate_expr(expr[i]) #recursively process sublists
-                continue
-            name = expr[i]
-            if name[0] == '"' and name[-1] == '"': # a string
-                expr[i] = expr[i][1:-1] # remove quotes
-                continue
-            if self.lookUpField(name) != None: # a field
-                expr[i] = self.lookUpField(expr[i]).value # get value
-                continue
+        elif expr[0] == '+' or expr[0] == '-' or expr[0] == '*' or expr[0] == '/' or expr[0] == '%':
+            op = expr[0]
+            expr = expr[1:3]
 
+        for i in range(len(expr)):
+            expr[i] = self.evalName(expr[i], param_names, params)
+
+        if op != '' and not ((isinstance(expr[0], int) and isinstance(expr[1], int)) or (isinstance(expr[0], str) and isinstance(expr[1], str))):
+            InterpreterBase().error(ErrorType.TYPE_ERROR, f"'{expr[0]}' and {expr[1]} not of same type to perform operation.")
+
+        if op == '+':
+            return expr[0] + expr[1]
+        if op == '-':
+            return expr[0] - expr[1]
+        if op == '*':
+            return expr[0] * expr[1]
+        if op == '/':
+            return expr[0] // expr[1]
+        if op == '%':
+            return expr[0] % expr[1]
         return expr
+    
+    def isString(self, input):
+        return input[0] == '"' and input[-1] == '"'
+    
+    def isInt(self,input):
+        return input.isdigit() or (input[0] == '-' and input[1:].isdigit())
+    
+    def evalName(self, name, param_names=[], params=[]):
+        if type(name) is list: #sub expr
+            name = self.evaluate_expr(name, param_names, params) #recursively process it
+        elif self.isString(name[0]): # a string
+            name = name[1:-1] # remove quotes
+        elif self.lookUpField(name) != None: # a field
+            name = self.lookUpField(name).value # get value
+        elif name in param_names: # a param
+            params[param_names.index(name)] = self.evalName(params[param_names.index(name)], param_names, params)
+            name = params[param_names.index(name)] # get its given value
+        elif (self.isInt(name)):
+            name = int(name)
+        else:
+            InterpreterBase().error(ErrorType.NAME_ERROR, f"'{name}' is not defined.")
+        return name
