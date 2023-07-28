@@ -45,23 +45,50 @@ program = [
     ' (field tr true)',
     ' (field fa false)',
     ' (method main ()',
+    '   (print "hello world! " (call me retnum1))',
+    ' )' ,
+    ' (method retnum1 ()',
+    '  (begin',
+    '   (set tr false)',
+    '   (if tr (return ":D") (print ":("))',
+    '   (print "hi")',
+    '  )',
+    ' )' ,
+    ') # end of class']
+
+'''
+program = [
+    '(class main',
+    ' (field num1 1)',
+    ' (field num2 2)',
+    ' (field tr true)',
+    ' (field fa false)',
+    ' (method main ()',
     '   (print "hello world! " (call me retnum1) " " num2 " " -2 " " (call me retinput 2 num2))',
     ' )' ,
     ' (method retnum1 ()',
     '   (return (! tr))',
     ' )' ,
     ' (method retinput (n m)',
-    '   (return (& (< m n) tr))',
+    '   (if true (return ":D") (return ":("))',
     ' )' ,
     ') # end of class']
-'''
+
 program = [
     '(class main',
-    ' (field num1 0)',
-    ' (field num2 1)',
+    ' (field num1 1)',
+    ' (field num2 2)',
+    ' (field tr true)',
+    ' (field fa false)',
     ' (method main ()',
-    '   (print "hello world! " num1 " and " num2)',
-    ' ) # end of method',
+    '   (print "hello world! " (call me retnum1) " " num2 " " -2 " " (call me retinput 2 num2))',
+    ' )' ,
+    ' (method retnum1 ()',
+    '   (set tr false)',
+    ' )' ,
+    ' (method retinput (n m)',
+    '   (if tr (return ":D") (return ":("))',
+    ' )' ,
     ') # end of class']
 '''
 

@@ -2,6 +2,7 @@ from VariableDefinition import VarDef
 from intbase import InterpreterBase
 from intbase import ErrorType
 from MethodDefinition import MethodDef
+from StatementDefinition import StateDef
 
 class ObjDef():
     def __init__(self):
@@ -51,9 +52,14 @@ class ObjDef():
         if statement.is_print():
             result = self.__execute_print(statement.program, param_names, params)
         elif statement.is_return():
-            result = self.__execute_return(statement.program, param_names, params)
-        return result
-
+            return self.__execute_return(statement.program, param_names, params)
+        elif statement.is_if():
+            result = self.__execute_if(statement.program, param_names, params)
+        elif statement.is_set():
+            result = self.__execute_set(statement.program, param_names, params)
+        elif statement.is_begin():
+            return self.__execute_begin(statement.program, param_names, params)
+        if (result != None): return result
     def __execute_print(self, statement, param_names, params):
         converted_list = [str(elem) for elem in self.evaluate_expr(statement[1:], param_names, params)]
         output = "".join(converted_list)
@@ -68,9 +74,39 @@ class ObjDef():
         converted_list = [str(elem) for elem in self.evaluate_expr(statement[1:], param_names, params)]
         output = "".join(converted_list)
         return output
+    
+    def __execute_if(self, statement, param_names, params):
+        condition = self.evalName(statement[1], param_names, params)
+        
+        if (not isinstance(condition, bool)):
+            InterpreterBase().error(ErrorType.TYPE_ERROR, f"condition ({statement[1]}) in if statement not a boolean type.")
+        
+        if (condition):
+            result = self.__run_statement(StateDef(None, statement[2]), param_names, params)
+        elif (len(statement) == 4):
+            result = self.__run_statement(StateDef(None, statement[3]), param_names, params)
+        return result
+    
+    def __execute_set(self, statement, param_names, params):
+        val = self.evalName(statement[2], param_names, params)
+        name = statement[1]
+        if self.lookUpField(name) != None: # a field
+            self.lookUpField(name).value = val
+        elif name in param_names: # a param
+            params[param_names.index(name)] = val
+        else :
+            InterpreterBase().error(ErrorType.NAME_ERROR, f"'{name}' is not defined.")
+        return
+    
+    def __execute_begin(self, statement, param_names, params):
+        statement = statement[1:]
+        for s in statement:
+            result = self.__run_statement(StateDef(None, s), param_names, params)
+            if (result != None): return result
+        return result
 
     def evaluate_expr(self, expr, param_names=[], params=[]): #param_names=["n", "x"], params=[9,-1]
-        print("evaluating",expr,"with param names",param_names,"and their corresponding values",params)
+        # print("evaluating",expr,"with param names",param_names,"and their corresponding values",params)
         op = ''
         if expr[0] == 'call':
             res = self.call_method(expr[2], expr[3:]) # temporarily ONLY "me" param-less methods
@@ -125,7 +161,8 @@ class ObjDef():
                 return expr[0] // expr[1]
             if op == '%':
                 return expr[0] % expr[1]
-            InterpreterBase().error(ErrorType.TYPE_ERROR, f"'{expr[0]}' and {expr[1]} cannot use operation {op}.")
+
+        InterpreterBase().error(ErrorType.TYPE_ERROR, f"'{expr[0]}' and {expr[1]} cannot use operation {op}.")
     
     def isString(self, input):
         return input[0] == '"' and input[-1] == '"'
