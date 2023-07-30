@@ -87,7 +87,7 @@ class InterpreterBase:
         """
         if not self.inp:
             return input()  # Get input from keyboard if not input list provided
-
+        
         if self.input_cursor < len(self.inp):
             cur_input = self.inp[self.input_cursor]
             self.input_cursor += 1

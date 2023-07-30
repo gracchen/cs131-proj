@@ -50,16 +50,22 @@ class ObjDef():
     # gets the result, if any
     def __run_statement(self, statement, param_names, params):
         if statement.is_print():
-            result = self.__execute_print(statement.program, param_names, params)
-        elif statement.is_return():
+            return self.__execute_print(statement.program, param_names, params)
+        if statement.is_return():
             return self.__execute_return(statement.program, param_names, params)
-        elif statement.is_if():
-            result = self.__execute_if(statement.program, param_names, params)
-        elif statement.is_set():
-            result = self.__execute_set(statement.program, param_names, params)
-        elif statement.is_begin():
+        if statement.is_if():
+            return self.__execute_if(statement.program, param_names, params)
+        if statement.is_while():
+            return self.__execute_while(statement.program, param_names, params)
+        if statement.is_set():
+            return self.__execute_set(statement.program, param_names, params)
+        if statement.is_begin():
             return self.__execute_begin(statement.program, param_names, params)
-        if (result != None): return result
+        if statement.is_inputs():
+            return self.__execute_inputs(statement.program, param_names, params)
+        if statement.is_inputi():
+            return self.__execute_inputi(statement.program, param_names, params)
+
     def __execute_print(self, statement, param_names, params):
         converted_list = [str(elem) for elem in self.evaluate_expr(statement[1:], param_names, params)]
         output = "".join(converted_list)
@@ -87,6 +93,18 @@ class ObjDef():
             result = self.__run_statement(StateDef(None, statement[3]), param_names, params)
         return result
     
+    def __execute_while(self, statement, param_names, params):
+        condition = self.evalName(statement[1], param_names, params)
+        
+        if (not isinstance(condition, bool)):
+            InterpreterBase().error(ErrorType.TYPE_ERROR, f"condition ({statement[1]}) in while statement not a boolean type.")
+        
+        result = None
+        while (condition and result == None): # if had a "return", result != None and need to stop
+            result = self.__run_statement(StateDef(None, statement[2]), param_names, params)
+            condition = self.evalName(statement[1], param_names, params)
+        return result
+
     def __execute_set(self, statement, param_names, params):
         val = self.evalName(statement[2], param_names, params)
         name = statement[1]
@@ -98,6 +116,28 @@ class ObjDef():
             InterpreterBase().error(ErrorType.NAME_ERROR, f"'{name}' is not defined.")
         return
     
+    def __execute_inputs(self, statement, param_names, params):
+        val = InterpreterBase(True, None).get_input()
+        name = statement[1]
+        if self.lookUpField(name) != None: # a field
+            self.lookUpField(name).value = val
+        elif name in param_names: # a param
+            params[param_names.index(name)] = val
+        else :
+            InterpreterBase().error(ErrorType.NAME_ERROR, f"'{name}' is not defined.")
+        return
+    
+    def __execute_inputi(self, statement, param_names, params):
+        val = int(InterpreterBase().get_input())
+        name = statement[1]
+        if self.lookUpField(name) != None: # a field
+            self.lookUpField(name).value = val
+        elif name in param_names: # a param
+            params[param_names.index(name)] = val
+        else :
+            InterpreterBase().error(ErrorType.NAME_ERROR, f"'{name}' is not defined.")
+        return
+
     def __execute_begin(self, statement, param_names, params):
         statement = statement[1:]
         for s in statement:
@@ -173,10 +213,14 @@ class ObjDef():
     def evalName(self, name, param_names=[], params=[]):
         if type(name) is list: #sub expr
             name = self.evaluate_expr(name, param_names, params) #recursively process it
+        elif type(name) is int: 
+            return name
         elif name == 'true':
             name = True
         elif name == 'false':
             name = False
+        elif (self.isInt(name)):
+            name = int(name)
         elif self.isString(name[0]): # a string
             name = name[1:-1] # remove quotes
         elif self.lookUpField(name) != None: # a field
@@ -184,8 +228,6 @@ class ObjDef():
         elif name in param_names: # a param
             params[param_names.index(name)] = self.evalName(params[param_names.index(name)], param_names, params)
             name = params[param_names.index(name)] # get its given value
-        elif (self.isInt(name)):
-            name = int(name)
         else:
             InterpreterBase().error(ErrorType.NAME_ERROR, f"'{name}' is not defined.")
         return name

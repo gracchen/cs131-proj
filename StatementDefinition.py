@@ -18,4 +18,13 @@ class StateDef():
     
     def is_begin(self):
         return self.program[0] == "begin"
+    
+    def is_while(self):
+        return self.program[0] == "while"
+
+    def is_inputs(self):
+        return self.program[0] == "inputs"
+
+    def is_inputi(self):
+        return self.program[0] == "inputi"
 
