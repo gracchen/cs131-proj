@@ -5,9 +5,10 @@ from MethodDefinition import MethodDef
 from StatementDefinition import StateDef
 
 class ObjDef():
-    def __init__(self):
+    def __init__(self, c):
         self.fields = []
         self.methods = []
+        self.c = c
 
     def printAll(self):
         print(f'class():')
@@ -33,7 +34,10 @@ class ObjDef():
         for f in self.fields:
             if (f.name == name):
                 return f
-        return None
+        return None    
+    
+    def lookUpClass(self,name):
+        return self.c.lookUpClass()
     
     # Interpret the specified method using the provided parameters    
     def call_method(self, method_name, params=[]): 
@@ -65,6 +69,11 @@ class ObjDef():
             return self.__execute_inputs(statement.program, param_names, params)
         if statement.is_inputi():
             return self.__execute_inputi(statement.program, param_names, params)
+        if statement.is_call():
+            return self.__execute_call(statement.program, param_names, params)
+        if statement.is_new():
+            return self.__execute_new(statement.program, param_names, params)
+        InterpreterBase().error(ErrorType.TYPE_ERROR, f"expression {statement.program} invalid.")
 
     def __execute_print(self, statement, param_names, params):
         converted_list = [str(elem) for elem in self.evaluate_expr(statement[1:], param_names, params)]
@@ -142,17 +151,34 @@ class ObjDef():
         statement = statement[1:]
         for s in statement:
             result = self.__run_statement(StateDef(None, s), param_names, params)
-            if (result != None): return result
+            if (s[0] == InterpreterBase.RETURN_DEF): return result
         return result
+    
+    def __execute_call(self, expr, param_names, params):
+        c = self
+        if (expr[1] != InterpreterBase().ME_DEF):
+            c = self.evalName(expr[1])
+            if (c == None or not isinstance(c, ObjDef)): 
+                InterpreterBase().error(ErrorType.TYPE_ERROR, f"'{expr[1]}' not a valid class for the 'new' keyword.")
+        
+        res = c.call_method(expr[2], expr[3:]) # temporarily ONLY "me" param-less methods
+        if (res == None): res = "None"
+        return res
+    
+    def __execute_new(self, expr, param_names, params):
+        c = self.c.lookUpClass(expr[1])
+        if (c == None):
+            InterpreterBase().error(ErrorType.TYPE_ERROR, f"'{expr[1]}' not a valid classname for the 'new' keyword.")
+        return c
 
     def evaluate_expr(self, expr, param_names=[], params=[]): #param_names=["n", "x"], params=[9,-1]
-        # print("evaluating",expr,"with param names",param_names,"and their corresponding values",params)
+        #print("evaluating",expr,"with param names",param_names,"and their corresponding values",params)
         op = ''
-        if expr[0] == 'call':
-            res = self.call_method(expr[2], expr[3:]) # temporarily ONLY "me" param-less methods
-            if (res == None): 
-                res = "None"
-            return res
+        if expr[0] == InterpreterBase().CALL_DEF:
+            return self.__execute_call(expr, param_names, params)
+        elif expr[0] == InterpreterBase().NEW_DEF:
+            return self.__execute_new(expr, param_names, params)
+        
         elif expr[0] == '+' or expr[0] == '-' or expr[0] == '*' or expr[0] == '/' or expr[0] == '%' or expr[0] == '<' or expr[0] == '>' or expr[0] == '<=' or expr[0] == '>=' or expr[0] == '==' or expr[0] == '!=' or expr[0] == '!' or expr[0] == '&' or expr[0] == '|':
             op = expr[0]
             expr = expr[1:3]
@@ -211,13 +237,16 @@ class ObjDef():
         return input.isdigit() or (input[0] == '-' and input[1:].isdigit())
     
     def evalName(self, name, param_names=[], params=[]):
+        #print("evalName-", name)
+        if name == InterpreterBase.NULL_DEF:
+            return None
         if type(name) is list: #sub expr
             name = self.evaluate_expr(name, param_names, params) #recursively process it
         elif type(name) is int: 
             return name
-        elif name == 'true':
+        elif name == InterpreterBase().TRUE_DEF:
             name = True
-        elif name == 'false':
+        elif name == InterpreterBase().FALSE_DEF:
             name = False
         elif (self.isInt(name)):
             name = int(name)

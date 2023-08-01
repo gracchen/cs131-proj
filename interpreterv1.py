@@ -1,10 +1,7 @@
 from intbase import InterpreterBase
 from bparser import BParser
 
-from VariableDefinition import VarDef
 from ClassDefinition import ClassDef
-from StatementDefinition import StateDef
-from MethodDefinition import MethodDef
 
 class Interpreter(InterpreterBase): 
     def __init__(self, console_output=True, inp=None, trace_output=True):
@@ -17,16 +14,17 @@ class Interpreter(InterpreterBase):
         if result == False:
             print('Parsing failed. There must have been a mismatched parenthesis.')
             return
-        classes = []
+        
         mainClass = None
+
         for i in range(len(parsed_program)): #parsed_program[i] = a new defined class
-            if (parsed_program[i][0] != "class"):
+            if (parsed_program[i][0] != InterpreterBase().CLASS_DEF):
                 continue
 
             c = ClassDef(parsed_program[i])
-            classes.append(c)
+            ClassDef.classes.append(c)
 
-            if (c.name == "main"):
+            if (c.name == InterpreterBase().MAIN_CLASS_DEF):
                 mainClass = c
             #classes[0].printAll()
             #print("---------------------------\n")
@@ -36,7 +34,70 @@ class Interpreter(InterpreterBase):
             #if (main != None):
             m = mainClass.instantiate_object()
             #m.printAll()
-            m.call_method("main")
+            m.call_method(InterpreterBase().MAIN_FUNC_DEF)
+
+        #for c in mainClass.classes:
+        #    c.printAll()
+
+        #print(len(ClassDef.classes))
+        #print(len(mainClass.classes))
+
+#    NULL_DEF = "null"
+#    NEW_DEF = "new"
+#    ME_DEF = "me"
+
+
+program = ['	 (class main',
+'         (field other null)',
+'         (field result 0)',
+'         (method main ()',
+'           (begin',
+'             (call me foo 10 20)   # call foo method in same object',
+'             (set other (new other_class))',
+'             (call other foo 5 6)  # call foo method in other object',
+'             (print "square: " (call other square 10)) # call expression',
+'           )',
+'         )',
+'         (method foo (a b)',
+'          (print a " " b)',
+'         )',
+'       )',
+'',
+' (class other_class',
+'         (method foo (q r) (print q " " r))',
+'         (method square (q) (return (* q q)))',
+'       )',
+'',]
+
+
+
+
+
+'''
+program = [
+'(class person',
+'   (field name "")',
+'   (field age 0)',
+'   (method init (n a) (begin (set name n) (set age a)))',
+'   (method talk (to_whom) (print name " says hello to " to_whom))',
+'   (method get_age () (return age))',
+')',
+'',
+'(class main',
+' (field p null)',
+' (method tell_joke (to_whom) (print "Hey " to_whom ", knock knock!"))',
+' (method main ()',
+'   (begin',
+'      (call me tell_joke "Leia")  # calling method in the current obj',
+'      (set p (new person))    ',
+'      (call p init "Siddarth" 25)  # calling method in other object',
+'      (call p talk "Boyan")        # calling method in other object',
+'      (print "Siddarths age is " (call p get_age))',
+'   )',
+' )',
+')',
+]
+
 
 program = [
     '(class main',
@@ -47,7 +108,9 @@ program = [
     ' (method main ()',
     '   (begin'
     '     (inputs num2)'
-    '     (print "hello world! " (call me countDown 4) num1 num2)',
+    '     (set fa (new other_class))',
+    '     (print "hello world! " (call fa foo) num1 num2)',
+    '     (call me retnum1)',
     '   )',
     ' )',
     ' (method retnum1 ()',
@@ -69,9 +132,16 @@ program = [
     '   (return n)'
     '  )',
     ' )' ,
-    ') # end of class']
+    ') # end of class',
+    '(class other_class (field a 10) (method foo () (print "ayooooo foo here " a ))) '
+    
+    
+    ]
 
-'''
+
+
+
+
 program = [
     '(class main',
     ' (field num1 1)',
